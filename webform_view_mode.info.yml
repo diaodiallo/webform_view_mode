@@ -1,0 +1,7 @@
+name: "Webform view mode"
+type: module
+description: "Webform select button view mode."
+dependencies:
+  - views
+package: "Views"
+core: 8.x

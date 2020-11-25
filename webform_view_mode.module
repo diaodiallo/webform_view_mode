@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implements hook_views_plugins_field_alter().
+ */
+function webform_view_mode_views_plugins_field_alter(array &$plugins) {
+  $plugins['standard']['class'] = 'Drupal\webform_view_mode\Plugin\views\field\ViewModeField';
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function webform_view_mode_views_pre_render(&$view) {
+
+  if ($view->id() == 'arc_tool_summary_table_denormalized') {
+    $webform = \Drupal\webform\Entity\Webform::load('arc_tool');
+    $baseTable = $view->getBaseTables();
+    unset($baseTable['#global']);
+    $baseTable = array_keys($baseTable);
+    foreach ($baseTable as $dw_table) {
+      foreach ($view->result as &$row) {
+        foreach ($row as $key => $value) {
+          $fieldName = str_replace($dw_table . '_', '', $key);
+          $mode = $view->field[$fieldName]->options['view_mode_field'];
+          if ($mode == 'value') {
+            $select = $webform->getElementDecoded($fieldName);
+            if (!empty($select) && !is_null($select) && $select['#type'] == 'select') {
+                $row->$key = $select['#options'][$value];
+            }
+            else {
+              $lastPos = strripos($fieldName, '_');
+              $fieldName = substr($fieldName,0,$lastPos);
+              $check = $webform->getElementDecoded($fieldName);
+              if (!empty($check) && !is_null($check) && $check['#type'] == 'checkboxes') {
+                  $row->$key = $row->$key == 1 ? 'Yes' : 'No';
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
